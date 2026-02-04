@@ -1,0 +1,16 @@
+# Core MLOps
+mlflow==2.12.2
+dagshub==0.3.32
+dvc==3.51.2
+
+# Model serving
+bentoml==1.2.12
+
+# ML stack
+scikit-learn==1.5.1
+pandas==2.2.2
+numpy==1.26.4
+
+# Utilities
+python-dotenv==1.0.1
+

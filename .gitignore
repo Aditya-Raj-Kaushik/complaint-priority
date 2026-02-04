@@ -1,0 +1,16 @@
+# Virtual environments
+venv/
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# MLflow
+mlruns/
+
+# DVC
+.dvc/cache/
+
+# OS
+.DS_Store
