@@ -1,10 +1,8 @@
-# -------------------------------
-# Sanity check (must print)
-# -------------------------------
-print("TRAINING SCRIPT STARTED")
+print("MULTI-EXPERIMENT TRAINING STARTED")
 
 import mlflow
 import mlflow.sklearn
+import dagshub
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
@@ -15,41 +13,32 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
-from data_loader import load_complaints
+from .data_loader import load_complaints
 
 
-# -------------------------------
-# MLflow setup (DagsHub backend)
-# -------------------------------
-mlflow.set_tracking_uri(
-    "https://Aditya-Raj-Kaushik:4f52a7331637b455d4de1e22c042b32bbd70f59a@dagshub.com/Aditya-Raj-Kaushik/complaint-priority.mlflow"
-)
 
-
-import dagshub
-
+# --------------------------------------------------
+# DagsHub + MLflow initialization (AUTH HANDLED)
+# --------------------------------------------------
 dagshub.init(
     repo_owner="Aditya-Raj-Kaushik",
     repo_name="complaint-priority",
     mlflow=True
 )
 
-mlflow.set_experiment("complaint_priority_training")
+mlflow.set_experiment("complaint_priority_v3_complex_data")
 
 
-
-def main():
-    print("Loading dataset...")
-
+# --------------------------------------------------
+# Single experiment runner
+# --------------------------------------------------
+def run_experiment(max_features: int, C: float):
     df = load_complaints("data/raw/complaints.csv")
-
-    print("Dataset shape:", df.shape)
 
     X = df.drop(columns=["priority"])
     y = df["priority"]
 
-    label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(y)
+    y_encoded = LabelEncoder().fit_transform(y)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -59,19 +48,14 @@ def main():
         stratify=y_encoded,
     )
 
-    print("Train size:", X_train.shape)
-    print("Test size:", X_test.shape)
-
-    # -------------------------------
-    # Feature + model pipeline
-    # -------------------------------
     preprocessor = ColumnTransformer(
         transformers=[
             (
                 "text",
                 TfidfVectorizer(
-                    max_features=3000,
+                    max_features=max_features,
                     ngram_range=(1, 2),
+                    min_df=2,              
                 ),
                 "complaint_text",
             ),
@@ -79,7 +63,11 @@ def main():
         ]
     )
 
-    model = LogisticRegression(max_iter=1000)
+    model = LogisticRegression(
+        max_iter=1000,
+        C=C,
+        n_jobs=1
+    )
 
     pipeline = Pipeline(
         steps=[
@@ -88,12 +76,7 @@ def main():
         ]
     )
 
-    # -------------------------------
-    # MLflow experiment
-    # -------------------------------
     with mlflow.start_run():
-        print("Training model...")
-
         pipeline.fit(X_train, y_train)
 
         preds = pipeline.predict(X_test)
@@ -101,28 +84,39 @@ def main():
         acc = accuracy_score(y_test, preds)
         f1 = f1_score(y_test, preds, average="weighted")
 
-        print(f"Accuracy: {acc:.4f}")
-        print(f"F1 Score: {f1:.4f}")
+        # --------------------
+        # Log to MLflow
+        # --------------------
+        mlflow.log_param("model", "logistic_regression")
+        mlflow.log_param("tfidf_max_features", max_features)
+        mlflow.log_param("tfidf_ngram_range", "1-2")
+        mlflow.log_param("C", C)
 
-        # Log metrics
         mlflow.log_metric("accuracy", acc)
         mlflow.log_metric("f1_weighted", f1)
 
-        # Log parameters
-        mlflow.log_param("model_type", "logistic_regression")
-        mlflow.log_param("max_features", 3000)
-        mlflow.log_param("ngram_range", "1-2")
-
-        # Log & register model
         mlflow.sklearn.log_model(
-            sk_model=pipeline,
-            artifact_path="model",
-            registered_model_name="complaint_priority_model",
+            pipeline,
+            artifact_path="model"
         )
 
-        print("Model logged to MLflow successfully")
+        print(
+            f"[RUN] max_features={max_features}, C={C} "
+            f"-> accuracy={acc:.4f}, f1={f1:.4f}"
+        )
+
+
+# --------------------------------------------------
+# Experiment grid (SMALL DATASET)
+# --------------------------------------------------
+def main():
+    max_features_list = [500, 1000, 2000]
+    C_list = [0.3, 1.0, 3.0]
+
+    for max_features in max_features_list:
+        for C in C_list:
+            run_experiment(max_features, C)
 
 
 if __name__ == "__main__":
     main()
-

@@ -1,67 +1,117 @@
 import random
-import pandas as pd # type: ignore
+import pandas as pd
 
 random.seed(42)
 
-complaint_templates = {
-    "high": [
-        "App crashes when I try to {}",
-        "Payment failed multiple times while {}",
-        "System is completely unusable during {}",
-        "Urgent issue affecting business: {}",
-        "Service outage noticed while {}"
-    ],
-    "medium": [
-        "Slow response when trying to {}",
-        "Delay observed in {}",
-        "Issue occurs occasionally during {}",
-        "Minor bug noticed while {}",
-        "Support took time to resolve {}"
-    ],
-    "low": [
-        "Feature request related to {}",
-        "UI improvement suggestion for {}",
-        "General feedback about {}",
-        "Would like enhancement in {}",
-        "Cosmetic issue noticed in {}"
-    ]
-}
-
-actions = [
-    "logging in",
-    "making a payment",
-    "updating profile",
-    "uploading documents",
-    "using the dashboard",
-    "accessing reports",
-    "resetting password"
+ISSUES = [
+    "login", "payment", "dashboard", "profile update",
+    "data export", "report generation", "search",
+    "notifications", "API access", "file upload"
 ]
 
-products = ["Mobile App", "Web App", "Payments", "Customer Service"]
+SYMPTOMS = [
+    "fails intermittently",
+    "is slower than expected",
+    "sometimes does not respond",
+    "shows unexpected behavior",
+    "returns inconsistent results",
+    "works only after retrying",
+    "causes confusion for users",
+]
 
-rows = []
+CONTEXTS = [
+    "during peak hours",
+    "after recent update",
+    "on mobile devices",
+    "for certain users",
+    "under heavy load",
+    "when switching accounts",
+    "after long inactivity",
+]
 
-for _ in range(300):  
-    priority = random.choices(
-        ["low", "medium", "high"],
-        weights=[0.5, 0.3, 0.2] 
-    )[0]
+EMOTIONS = [
+    "This is frustrating",
+    "Quite disappointed",
+    "Annoying experience",
+    "Not sure why this happens",
+    "This impacts my work",
+    "Hard to rely on the system",
+]
 
-    template = random.choice(complaint_templates[priority])
-    action = random.choice(actions)
+REQUESTS = [
+    "please look into this",
+    "needs investigation",
+    "would appreciate a fix",
+    "hope this can be resolved",
+    "requesting clarification",
+    "seeking assistance",
+]
 
-    complaint_text = template.format(action)
-    product = random.choice(products)
-    customer_tenure = random.randint(0, 10)
+def generate_text():
+    issue = random.choice(ISSUES)
+    symptom = random.choice(SYMPTOMS)
+    context = random.choice(CONTEXTS)
+    emotion = random.choice(EMOTIONS)
+    request = random.choice(REQUESTS)
 
-    rows.append({
-        "complaint_text": complaint_text,
-        "product": product,
-        "customer_tenure": customer_tenure,
-        "priority": priority
-    })
+    patterns = [
+        f"{issue} {symptom} {context}. {emotion}, {request}.",
+        f"Users report that {issue} {symptom} {context}. {request}.",
+        f"{emotion}. The {issue} {symptom} {context}.",
+        f"Observed that {issue} {symptom} {context}, {request}.",
+    ]
 
-df = pd.DataFrame(rows)
-df.to_csv("data/raw/complaints.csv", index=False)
+    if random.random() < 0.35:
+        issue2 = random.choice([i for i in ISSUES if i != issue])
+        patterns.append(
+            f"{issue} {symptom} and {issue2} also {random.choice(SYMPTOMS)} {context}. {emotion}."
+        )
 
-print("Dataset generated:", df.shape)
+    return random.choice(patterns)
+
+def assign_priority(text: str):
+    """
+    Priority depends on *latent factors*, not keywords.
+    """
+    base = random.random()
+
+    if "intermittently" in text or "retrying" in text:
+        base += 0.15
+    if "under heavy load" in text or "peak hours" in text:
+        base += 0.15
+    if "multiple issues" in text:
+        base += 0.10
+
+    base += random.uniform(-0.15, 0.15)
+
+    if base > 0.65:
+        return "high"
+    elif base > 0.35:
+        return "medium"
+    else:
+        return "low"
+
+
+def generate_row():
+    text = generate_text()
+    priority = assign_priority(text)
+
+    return {
+        "complaint_text": text,
+        "customer_tenure": random.randint(0, 15),
+        "priority": priority,
+    }
+
+
+def main():
+    rows = [generate_row() for _ in range(8000)]
+
+    df = pd.DataFrame(rows)
+    df.to_csv("data/raw/complaints.csv", index=False)
+
+    print("Dataset generated:", df.shape)
+    print(df["priority"].value_counts(normalize=True))
+
+
+if __name__ == "__main__":
+    main()
