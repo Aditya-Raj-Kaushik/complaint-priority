@@ -1,143 +1,199 @@
-# Complaint Priority Classification – End-to-End MLOps Project
+🚀 Complaint Priority Classification – End-to-End MLOps Project
 
-An end-to-end, production-oriented **Machine Learning + MLOps** project that demonstrates how to build, track, version, and deploy a real-world ML system using **DVC, MLflow, DagsHub, and BentoML**.
+An end-to-end production-ready MLOps system for classifying customer complaints by urgency, built using MLflow, DVC, DagsHub, and BentoML.
 
-This project focuses on **complaint priority classification** (low / medium / high) from noisy, realistic customer complaint text, with full experiment tracking and model lifecycle management.
+This project demonstrates the complete ML lifecycle: data versioning, experiment tracking, model registry, promotion to production, and API deployment.
 
----
+📌 Problem Statement
 
-## 🚀 Project Highlights
+Customer support teams receive thousands of complaints daily.
+Not all complaints are equally urgent — delayed handling of high-priority issues leads to customer churn.
 
-- Realistic, **highly complex synthetic dataset** (8k samples, noisy & non-deterministic)
-- **DVC** for dataset versioning and reproducibility
-- **MLflow** for experiment tracking, metrics, and model registry
-- **DagsHub** as a remote backend for Git + DVC + MLflow
-- Systematic **multi-experiment training**
-- Clean experiment lifecycle (archived old experiments)
-- Production-ready project structure
-- Designed as a **resume-grade MLOps portfolio project**
+Goal:
+Automatically classify complaints into urgent vs non-urgent categories and deploy the model as a scalable API.
 
----
+🧠 Solution Overview
 
-## 🧠 Problem Statement
+NLP-based text classification using sentence embeddings
 
-Customer support teams receive thousands of complaints daily.  
-Automatically predicting the **priority** of a complaint helps route urgent issues faster and improve customer satisfaction.
+Binary urgency classification (urgent / non_urgent)
 
-**Goal:**  
-Classify complaints into:
-- `low`
-- `medium`
-- `high`
+Full MLOps workflow with reproducibility and traceability
 
-based on noisy, ambiguous, real-world text.
+Lightweight, production-optimized inference service
 
----
+🏗️ System Architecture
+Data → DVC → Training → MLflow Experiments
+                     ↓
+              Model Registry
+                     ↓
+            Production Promotion
+                     ↓
+              BentoML API
 
-## 📂 Project Structure
+Tools Used
 
+Python
+
+DVC – Dataset versioning
+
+MLflow – Experiment tracking & model registry
+
+DagsHub – Remote backend for MLflow + DVC
+
+Sentence Transformers – Text embeddings
+
+Scikit-learn – Classification
+
+BentoML – Model serving
+
+📁 Project Structure
 complaint-priority/
 │
 ├── data/
-│ └── raw/
-│ └── complaints.csv.dvc # DVC-tracked dataset
+│   └── raw/
+│       └── complaints.csv        # Versioned with DVC
 │
 ├── src/
-│ ├── init.py
-│ ├── data_loader.py # Data loading utilities
-│ └── train.py # Multi-experiment MLflow training
+│   ├── train.py                  # Training + MLflow logging
+│   └── data_loader.py
 │
 ├── scripts/
-│ ├── cleanup_mlflow.py # MLflow experiment cleanup
-│ └── promote_model.py # Model promotion script
+│   ├── cleanup_mlflow.py          # Experiment cleanup
+│   └── promote_to_production.py  # Model promotion
 │
-├── generate_dataset.py # Complex dataset generator
+├── service.py                    # BentoML service
 ├── requirements.txt
-├── requirements-lock.txt
-└── README.md
+├── dvc.yaml
+├── README.md
+└── .gitignore
+
+📊 Dataset
+
+Synthetic but realistic complaint text
+
+Multiple complaint categories
+
+Imbalanced urgency distribution (real-world scenario)
+
+Fully versioned using DVC
+
+🔬 Model Training
+Approach
+
+Convert complaint text → sentence embeddings
+
+Binary classification using Logistic Regression
+
+Class balancing for realistic performance
+
+Embeddings
+
+Training: all-mpnet-base-v2 (high-quality embeddings)
+
+Inference: all-MiniLM-L6-v2 (lightweight & fast)
+
+Metrics Logged
+
+Accuracy
+
+Weighted F1 Score
+
+Hyperparameters
+
+Model artifacts
+
+All experiments are tracked in MLflow (DagsHub backend).
+
+🧪 Experiment Tracking (MLflow + DagsHub)
+
+Each training run logged automatically
+
+Multiple experiments supported
+
+Best model selected manually
+
+Model registered in MLflow Registry
+
+Example:
+
+complaint_priority_model_binary_embeddings
+└── Version 4 → Production
+
+🚦 Model Promotion
+
+Only explicitly approved models are deployed.
+
+python scripts/promote_to_production.py
 
 
----
+This promotes the latest model version to Production in MLflow.
 
-## 📊 Dataset Design
+🚀 Deployment (BentoML)
 
-- ~8,000 complaint samples
-- Overlapping vocabulary across priorities
-- Implicit severity (no keyword leakage)
-- Multi-issue complaints
-- Contextual ambiguity
-- Controlled label noise
+The Production model is served via a REST API using BentoML.
 
-This ensures the task is **non-trivial** and models must truly generalize.
-
----
-
-## 🔬 Modeling Approach
-
-- **Text Features:** TF-IDF (1–2 ngrams, limited feature space)
-- **Model:** Logistic Regression
-- **Evaluation Metrics:**
-  - Primary: `f1_weighted`
-  - Secondary: `accuracy`
-
-Feature sizes intentionally constrained to avoid overfitting on small-to-medium datasets.
-
----
-
-## 🧪 Experiment Tracking (MLflow)
-
-- All experiments tracked using **MLflow**
-- Remote backend hosted on **DagsHub**
-- Multiple controlled experiments:
-  - TF-IDF feature sizes
-  - Regularization strengths
-- Clean experiment namespace:
-complaint_priority_v3_complex_data
+Start the API
+bentoml serve service:svc --reload
 
 
-Old exploratory experiments were explicitly removed to keep the UI clean and meaningful.
+Server runs at:
 
----
+http://localhost:3000
 
-## 🗂️ Model Registry
+🔗 API Usage
+Endpoint
 
-- Best-performing model selected based on `f1_weighted`
-- Model versioned and stored in **MLflow Model Registry**
-- Promotion to **Production** stage handled programmatically
+POST /predict
 
-This enables reproducible deployment and rollback.
+Request
+{
+  "text": "My internet has been down for 3 days and nobody is responding"
+}
 
----
+Response
+{
+  "prediction": "urgent"
+}
 
-## 🔁 Reproducibility
+📈 Monitoring
 
-- Dataset tracked via **DVC**
-- Exact dataset version reproducible via:
-```bash
-dvc pull
-Experiments reproducible by rerunning:
+Built-in Prometheus metrics
 
-python -m src.train
-🛠️ Tech Stack
-Python
+Available at:
 
-scikit-learn
+http://localhost:3000/metrics
 
-MLflow
+♻️ Reproducibility & Best Practices
 
-DVC
+Dataset versioned with DVC
 
-DagsHub
+Experiments reproducible via MLflow
 
-BentoML (deployment phase)
+Clear separation of:
 
-📌 How to Run Locally
-1. Clone repository
-git clone https://dagshub.com/Aditya-Raj-Kaushik/complaint-priority.git
-cd complaint-priority
-2. Install dependencies
-pip install -r requirements.txt
-3. Pull dataset
-dvc pull
-4. Run training experiments
-python -m src.train
+Training
+
+Registry
+
+Deployment
+
+Production model explicitly promoted
+
+Lightweight inference for stability on limited hardware
+
+🧠 Key MLOps Concepts Demonstrated
+
+Experiment tracking
+
+Data versioning
+
+Model registry
+
+Model version promotion
+
+Production deployment
+
+Inference optimization
+
+API-based ML serving

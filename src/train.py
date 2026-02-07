@@ -13,9 +13,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
 
-# --------------------------------------------------
-# Initialize DagsHub + MLflow
-# --------------------------------------------------
 dagshub.init(
     repo_owner="Aditya-Raj-Kaushik",
     repo_name="complaint-priority",
@@ -25,22 +22,13 @@ dagshub.init(
 mlflow.set_experiment("complaint_priority_v7_embeddings_binary")
 
 
-# --------------------------------------------------
-# Load dataset
-# --------------------------------------------------
 def load_data():
     return pd.read_csv("data/raw/complaints.csv")
 
 
-# --------------------------------------------------
-# Main training pipeline
-# --------------------------------------------------
 def main():
     df = load_data()
 
-    # -------------------------------
-    # Binary urgency reframing
-    # -------------------------------
     df["urgency"] = df["priority"].apply(
         lambda x: "urgent" if x in ["medium", "high"] else "non_urgent"
     )
@@ -59,9 +47,6 @@ def main():
         stratify=y,
     )
 
-    # -------------------------------
-    # Sentence embeddings
-    # -------------------------------
     embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
     X_train = embedding_model.encode(
@@ -76,9 +61,6 @@ def main():
         convert_to_numpy=True
     )
 
-    # -------------------------------
-    # Classifier
-    # -------------------------------
     classifier = LogisticRegression(
         max_iter=2000,
         C=1.5,
@@ -93,9 +75,6 @@ def main():
         acc = accuracy_score(y_test, preds)
         f1 = f1_score(y_test, preds, average="weighted")
 
-        # -------------------------------
-        # MLflow logging
-        # -------------------------------
         mlflow.log_param("task_type", "binary_urgency_classification")
         mlflow.log_param("positive_class", "urgent")
         mlflow.log_param("embedding_model", "all-MiniLM-L6-v2")
