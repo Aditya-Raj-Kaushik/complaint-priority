@@ -1,0 +1,15 @@
+service: service:svc
+labels:
+  owner: Aditya-Raj-Kaushik
+  project: complaint-priority
+include:
+  - service.py
+python:
+  packages:
+    - bentoml==1.2.12
+    - mlflow==2.12.2
+    - dagshub
+    - sentence-transformers==2.6.1
+    - scikit-learn
+    - numpy
+    - pandas
