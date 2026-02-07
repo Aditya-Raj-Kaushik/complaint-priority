@@ -22,7 +22,7 @@ dagshub.init(
     mlflow=True
 )
 
-mlflow.set_experiment("complaint_priority_v6_embeddings_binary")
+mlflow.set_experiment("complaint_priority_v7_embeddings_binary")
 
 
 # --------------------------------------------------
@@ -62,8 +62,7 @@ def main():
     # -------------------------------
     # Sentence embeddings
     # -------------------------------
-    embedding_model = SentenceTransformer("all-mpnet-base-v2")
-
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
     X_train = embedding_model.encode(
         X_train_texts,
@@ -81,12 +80,10 @@ def main():
     # Classifier
     # -------------------------------
     classifier = LogisticRegression(
-    max_iter=3000,
-    C=2.5,
-    class_weight="balanced",
-    solver="liblinear"
-)
-
+        max_iter=2000,
+        C=1.5,
+        n_jobs=1
+    )
 
     with mlflow.start_run():
         classifier.fit(X_train, y_train)
@@ -121,3 +118,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
