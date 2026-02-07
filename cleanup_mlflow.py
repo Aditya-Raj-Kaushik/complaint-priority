@@ -9,7 +9,7 @@ dagshub.init(
 
 client = mlflow.tracking.MlflowClient()
 
-EXP_NAME = "complaint_priority_training"
+EXP_NAME = "complaint_priority_v5_embeddings_binary"
 
 exp = client.get_experiment_by_name(EXP_NAME)
 if exp:
